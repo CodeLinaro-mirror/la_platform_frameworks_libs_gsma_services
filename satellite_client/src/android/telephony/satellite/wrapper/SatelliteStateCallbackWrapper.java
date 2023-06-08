@@ -16,16 +16,13 @@
 
 package android.telephony.satellite.wrapper;
 
-import static android.telephony.satellite.SatelliteManager.SatelliteModemState;
-
-/**
- * A callback class for monitoring satellite modem state change events.
- */
+/** A callback class for monitoring satellite modem state change events. */
 public interface SatelliteStateCallbackWrapper {
- 
-    /**
-     * Called when satellite modem state changes.
-     * @param state The new satellite modem state.
-     */
-    void onSatelliteModemStateChanged(@SatelliteModemState int state);
+
+  /**
+   * Called when satellite modem state changes.
+   *
+   * @param state The new satellite modem state.
+   */
+  void onSatelliteModemStateChanged(@SatelliteManagerWrapper.SatelliteModemState int state);
 }
