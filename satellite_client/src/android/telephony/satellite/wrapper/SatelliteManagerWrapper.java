@@ -33,6 +33,7 @@ import android.telephony.satellite.NtnSignalStrength;
 import android.telephony.satellite.NtnSignalStrengthCallback;
 import android.telephony.satellite.PointingInfo;
 import android.telephony.satellite.SatelliteCapabilities;
+import android.telephony.satellite.SatelliteCapabilitiesCallback;
 import android.telephony.satellite.SatelliteDatagram;
 import android.telephony.satellite.SatelliteDatagramCallback;
 import android.telephony.satellite.SatelliteManager;
@@ -78,6 +79,10 @@ public class SatelliteManagerWrapper {
   private static final ConcurrentHashMap<
           NtnSignalStrengthCallbackWrapper, NtnSignalStrengthCallback>
       sNtnSignalStrengthCallbackWrapperMap = new ConcurrentHashMap<>();
+
+  private static final ConcurrentHashMap<
+          SatelliteCapabilitiesCallbackWrapper, SatelliteCapabilitiesCallback>
+          sSatelliteCapabilitiesCallbackWrapperMap = new ConcurrentHashMap<>();
 
   private final SatelliteManager mSatelliteManager;
   private final SubscriptionManager mSubscriptionManager;
@@ -792,9 +797,9 @@ public class SatelliteManagerWrapper {
 
   /** Registers for NTN signal strength changed from satellite modem. */
   @FlaggedApi(Flags.FLAG_OEM_ENABLED_SATELLITE_FLAG)
-  @SatelliteResult public int registerForNtnSignalStrengthChanged(
+  public void registerForNtnSignalStrengthChanged(
       @NonNull @CallbackExecutor Executor executor,
-      @NonNull NtnSignalStrengthCallbackWrapper callback) {
+      @NonNull NtnSignalStrengthCallbackWrapper callback) throws SatelliteException {
     NtnSignalStrengthCallback internalCallback =
         new NtnSignalStrengthCallback() {
           @Override
@@ -804,7 +809,11 @@ public class SatelliteManagerWrapper {
           }
         };
     sNtnSignalStrengthCallbackWrapperMap.put(callback, internalCallback);
-    return mSatelliteManager.registerForNtnSignalStrengthChanged(executor, internalCallback);
+    try {
+      mSatelliteManager.registerForNtnSignalStrengthChanged(executor, internalCallback);
+    } catch (SatelliteException ex) {
+      throw ex;
+    }
   }
 
   /**
@@ -816,7 +825,11 @@ public class SatelliteManagerWrapper {
       @NonNull NtnSignalStrengthCallbackWrapper callback) {
     NtnSignalStrengthCallback internalCallback = sNtnSignalStrengthCallbackWrapperMap.get(callback);
     if (internalCallback != null) {
-      mSatelliteManager.unregisterForNtnSignalStrengthChanged(internalCallback);
+      try {
+        mSatelliteManager.unregisterForNtnSignalStrengthChanged(internalCallback);
+      } catch (Exception ex) {
+        throw ex;
+      }
     }
   }
 
@@ -841,6 +854,44 @@ public class SatelliteManagerWrapper {
     }
     logd("failed to found matched subscription info");
     return false;
+  }
+
+  /**
+   * Wrapper API to register for satellite capabilities change event from the satellite service.
+   *
+   * @param executor The executor on which the callback will be called.
+   * @param callback The callback to handle the satellite capabilities changed event.
+   */
+  @FlaggedApi(Flags.FLAG_OEM_ENABLED_SATELLITE_FLAG)
+  public int registerForSatelliteCapabilitiesChanged(
+          @NonNull @CallbackExecutor Executor executor,
+          @NonNull SatelliteCapabilitiesCallbackWrapper callback) {
+    SatelliteCapabilitiesCallback internalCallback =
+            capabilities -> callback.onSatelliteCapabilitiesChanged(
+                    new SatelliteCapabilitiesWrapper(
+                            capabilities.getSupportedRadioTechnologies(),
+                            capabilities.isPointingRequired(),
+                            capabilities.getMaxBytesPerOutgoingDatagram(),
+                            transformToAntennaPositionWrapperMap(
+                                    capabilities.getAntennaPositionMap())));
+    sSatelliteCapabilitiesCallbackWrapperMap.put(callback, internalCallback);
+    return mSatelliteManager.registerForSatelliteCapabilitiesChanged(executor, internalCallback);
+  }
+
+  /**
+   * Wrapper API to unregisters for satellite capabilities change event from the satellite service.
+   * If callback was not registered before, the request will be ignored.
+   *
+   * @param callback The callback that was passed to.
+   */
+  @FlaggedApi(Flags.FLAG_OEM_ENABLED_SATELLITE_FLAG)
+  public void unregisterForSatelliteCapabilitiesChanged(
+          @NonNull SatelliteCapabilitiesCallbackWrapper callback) {
+    SatelliteCapabilitiesCallback internalCallback =
+            sSatelliteCapabilitiesCallbackWrapperMap.get(callback);
+    if (internalCallback != null) {
+      mSatelliteManager.unregisterForSatelliteCapabilitiesChanged(internalCallback);
+    }
   }
 
   private void logd(String message) {
