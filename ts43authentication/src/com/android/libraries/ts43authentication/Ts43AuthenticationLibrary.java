@@ -26,7 +26,6 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
-import android.os.OutcomeReceiver;
 import android.os.PersistableBundle;
 import android.telephony.SubscriptionInfo;
 import android.util.Log;
@@ -44,7 +43,6 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.ArrayList;
-import java.util.HexFormat;
 import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.locks.ReentrantLock;
@@ -132,12 +130,12 @@ public class Ts43AuthenticationLibrary extends Handler {
         @Nullable private final String mEntitlementVersion;
         private final String mAppId;
         private final Executor mExecutor;
-        private final OutcomeReceiver<
+        private final AuthenticationOutcomeReceiver<
                 Ts43Authentication.Ts43AuthToken, AuthenticationException> mCallback;
 
         private EapAkaAuthenticationRequest(String appName, @Nullable String appVersion,
                 int slotIndex, URL entitlementServerAddress, @Nullable String entitlementVersion,
-                String appId, Executor executor, OutcomeReceiver<
+                String appId, Executor executor, AuthenticationOutcomeReceiver<
                         Ts43Authentication.Ts43AuthToken, AuthenticationException> callback) {
             mAppName = appName;
             mAppVersion = appVersion;
@@ -158,12 +156,12 @@ public class Ts43AuthenticationLibrary extends Handler {
         @Nullable private final String mEntitlementVersion;
         private final String mAppId;
         private final Executor mExecutor;
-        private final OutcomeReceiver<URL, AuthenticationException> mCallback;
+        private final AuthenticationOutcomeReceiver<URL, AuthenticationException> mCallback;
 
         private OidcAuthenticationServerRequest(String appName, @Nullable String appVersion,
                 int slotIndex, URL entitlementServerAddress, @Nullable String entitlementVersion,
                 String appId, Executor executor,
-                OutcomeReceiver<URL, AuthenticationException> callback) {
+                AuthenticationOutcomeReceiver<URL, AuthenticationException> callback) {
             mAppName = appName;
             mAppVersion = appVersion;
             mSlotIndex = slotIndex;
@@ -180,11 +178,12 @@ public class Ts43AuthenticationLibrary extends Handler {
         @Nullable private final String mEntitlementVersion;
         private final URL mAesUrl;
         private final Executor mExecutor;
-        private final OutcomeReceiver<
+        private final AuthenticationOutcomeReceiver<
                 Ts43Authentication.Ts43AuthToken, AuthenticationException> mCallback;
 
         private OidcAuthenticationRequest(URL entitlementServerAddress,
-                @Nullable String entitlementVersion, URL aesUrl, Executor executor, OutcomeReceiver<
+                @Nullable String entitlementVersion, URL aesUrl, Executor executor,
+                AuthenticationOutcomeReceiver<
                         Ts43Authentication.Ts43AuthToken, AuthenticationException> callback) {
             mEntitlementServerAddress = entitlementServerAddress;
             mEntitlementVersion = entitlementVersion;
@@ -217,14 +216,17 @@ public class Ts43AuthenticationLibrary extends Handler {
      *        Refer to GSMA Service Entitlement Configuration section 2.3.
      * @param executor The executor on which the callback will be called.
      * @param callback The callback to receive the results of the authentication request.
-     *        If authentication is successful, {@link OutcomeReceiver#onResult(Object)} will return
-     *        a {@link Ts43Authentication.Ts43AuthToken} with the token and validity.
-     *        If the authentication fails, {@link OutcomeReceiver#onError(Throwable)} will return an
+     *        If authentication is successful,
+     *        {@link AuthenticationOutcomeReceiver#onResult(Object)} will return a
+     *        {@link Ts43Authentication.Ts43AuthToken} with the token and validity.
+     *        If the authentication fails,
+     *        {@link AuthenticationOutcomeReceiver#onError(Throwable)} will return an
      *        {@link AuthenticationException} with the failure details.
      */
     public void requestEapAkaAuthentication(PersistableBundle configs, String packageName,
             @Nullable String appVersion, int slotIndex, URL entitlementServerAddress,
-            @Nullable String entitlementVersion, String appId, Executor executor, OutcomeReceiver<
+            @Nullable String entitlementVersion, String appId, Executor executor,
+            AuthenticationOutcomeReceiver<
                     Ts43Authentication.Ts43AuthToken, AuthenticationException> callback) {
         String[] allowedPackageInfo = configs.getStringArray(KEY_ALLOWED_CERTIFICATES_STRING_ARRAY);
         String certificate = getMatchingCertificate(allowedPackageInfo, packageName);
@@ -246,8 +248,8 @@ public class Ts43AuthenticationLibrary extends Handler {
      * The client should present the content of the URL to the user to continue the authentication
      * process. After receiving a response from the authentication server, the client can call
      * {@link #requestOidcAuthentication(
-     * PersistableBundle, String, URL, String, URL, Executor, OutcomeReceiver)} to get the
-     * authentication token.
+     * PersistableBundle, String, URL, String, URL, Executor, AuthenticationOutcomeReceiver)} to get
+     * the authentication token.
      *
      * @param configs The configurations that should be applied to this authentication request.
      *        The keys of the bundle must be in {@link ConfigurationKey}.
@@ -268,18 +270,18 @@ public class Ts43AuthenticationLibrary extends Handler {
      *        Refer to GSMA Service Entitlement Configuration section 2.3.
      * @param executor The executor on which the callback will be called.
      * @param callback The callback to receive the results of the authentication server request.
-     *        If the request is successful, {@link OutcomeReceiver#onResult(Object)} will return a
-     *        {@link URL} with all the required parameters for the client to launch a user interface
-     *        for users to complete the authentication process. The parameters in URL include
-     *        {@code client_id}, {@code redirect_uri}, {@code state}, and {@code nonce}.
-     *        If the authentication fails, {@link OutcomeReceiver#onError(Throwable)} will return an
-     *        {@link AuthenticationException} with the failure details.
+     *        If the request is successful, {@link AuthenticationOutcomeReceiver#onResult(Object)}
+     *        will return a {@link URL} with all the required parameters for the client to launch a
+     *        user interface for users to complete the authentication process. The parameters in URL
+     *        include {@code client_id}, {@code redirect_uri}, {@code state}, and {@code nonce}.
+     *        If the authentication fails, {@link AuthenticationOutcomeReceiver#onError(Throwable)}
+     *        will return an {@link AuthenticationException} with the failure details.
      */
     public void requestOidcAuthenticationServer(PersistableBundle configs,
             String packageName, @Nullable String appVersion, int slotIndex,
             URL entitlementServerAddress, @Nullable String entitlementVersion,
             String appId, Executor executor,
-            OutcomeReceiver<URL, AuthenticationException> callback) {
+            AuthenticationOutcomeReceiver<URL, AuthenticationException> callback) {
         String[] allowedPackageInfo = configs.getStringArray(KEY_ALLOWED_CERTIFICATES_STRING_ARRAY);
         String certificate = getMatchingCertificate(allowedPackageInfo, packageName);
         if (isCallingPackageAllowed(allowedPackageInfo, packageName, certificate)) {
@@ -310,15 +312,16 @@ public class Ts43AuthenticationLibrary extends Handler {
      *        URL include the OIDC authentication code {@code code} and {@code state}.
      * @param executor The executor on which the callback will be called.
      * @param callback The callback to receive the results of the authentication request.
-     *        If authentication is successful, {@link OutcomeReceiver#onResult(Object)} will return
-     *        a {@link Ts43Authentication.Ts43AuthToken} with the token and validity.
-     *        If the authentication fails, {@link OutcomeReceiver#onError(Throwable)} will return an
-     *        {@link AuthenticationException} with the failure details.
+     *        If authentication is successful,
+     *        {@link AuthenticationOutcomeReceiver#onResult(Object)} will return a
+     *        {@link Ts43Authentication.Ts43AuthToken} with the token and validity.
+     *        If the authentication fails, {@link AuthenticationOutcomeReceiver#onError(Throwable)}
+     *        will return an {@link AuthenticationException} with the failure details.
      */
     public void requestOidcAuthentication(PersistableBundle configs,
             String packageName, URL entitlementServerAddress,
             @Nullable String entitlementVersion, URL aesUrl, Executor executor,
-            OutcomeReceiver<
+            AuthenticationOutcomeReceiver<
                     Ts43Authentication.Ts43AuthToken, AuthenticationException> callback) {
         String[] allowedPackageInfo = configs.getStringArray(KEY_ALLOWED_CERTIFICATES_STRING_ARRAY);
         String certificate = getMatchingCertificate(allowedPackageInfo, packageName);
@@ -373,7 +376,7 @@ public class Ts43AuthenticationLibrary extends Handler {
         for (Signature signature : signatures) {
             byte[] signatureHash = md.digest(signature.toByteArray());
             for (String certificate : allowedCertificates) {
-                byte[] certificateHash = HexFormat.of().parseHex(certificate);
+                byte[] certificateHash = hexStringToBytes(certificate);
                 if (Arrays.equals(signatureHash, certificateHash)) {
                     Log.d(TAG, "Found matching certificate for package " + packageName + ": "
                             + certificate);
@@ -413,7 +416,7 @@ public class Ts43AuthenticationLibrary extends Handler {
     @Nullable private Signature[] getMainPackageSignatures(String packageName) {
         PackageInfo packageInfo;
         try {
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            if (Build.VERSION.SDK_INT < 33) {
                 packageInfo = mPackageManager.getPackageInfo(packageName,
                         PackageManager.GET_SIGNING_CERTIFICATES);
             } else {
@@ -444,6 +447,25 @@ public class Ts43AuthenticationLibrary extends Handler {
                     + Arrays.toString(signatures));
         }
         return signatures;
+    }
+
+    @Nullable private byte[] hexStringToBytes(@Nullable String hex) {
+        if (hex == null) {
+            return null;
+        }
+
+        int length = hex.length();
+        byte[] ret = new byte[length / 2];
+
+        for (int i = 0; i < length; i += 2) {
+            ret[i / 2] =
+                    (byte) ((hexCharToInt(hex.charAt(i)) << 4) | hexCharToInt(hex.charAt(i + 1)));
+        }
+        return ret;
+    }
+
+    private int hexCharToInt(char hex) {
+        return Integer.parseInt(String.valueOf(hex), 16);
     }
 
     private boolean isCallingPackageAllowed(@Nullable String[] allowedPackageInfo,
