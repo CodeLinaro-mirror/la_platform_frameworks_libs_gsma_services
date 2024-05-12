@@ -32,6 +32,7 @@ import android.telephony.NetworkRegistrationInfo;
 import android.telephony.ServiceState;
 import android.telephony.SubscriptionInfo;
 import android.telephony.SubscriptionManager;
+import android.telephony.TelephonyCallback;
 import android.telephony.TelephonyManager;
 import android.telephony.satellite.AntennaPosition;
 import android.telephony.satellite.EnableRequestAttributes;
@@ -98,6 +99,10 @@ public class SatelliteManagerWrapper {
   private static final ConcurrentHashMap<
           SatelliteSupportedStateCallbackWrapper, SatelliteSupportedStateCallback>
           sSatelliteSupportedStateCallbackWrapperMap = new ConcurrentHashMap<>();
+
+  private static final ConcurrentHashMap<
+          CarrierRoamingNtnModeListenerWrapper, TelephonyCallback.CarrierRoamingNtnModeListener>
+          sCarrierRoamingNtnModeListenerWrapperMap = new ConcurrentHashMap<>();
 
   private final SatelliteManager mSatelliteManager;
   private final SubscriptionManager mSubscriptionManager;
@@ -198,6 +203,10 @@ public class SatelliteManagerWrapper {
    */
   public static final int SATELLITE_MODEM_STATE_ENABLING_SATELLITE = 8;
   /**
+   * The satellite modem is being powered off.
+   */
+  public static final int SATELLITE_MODEM_STATE_DISABLING_SATELLITE = 9;
+  /**
    * Satellite modem state is unknown. This generic modem state should be used only when the modem
    * state cannot be mapped to other specific modem states.
    */
@@ -216,6 +225,7 @@ public class SatelliteManagerWrapper {
         SATELLITE_MODEM_STATE_NOT_CONNECTED,
         SATELLITE_MODEM_STATE_CONNECTED,
         SATELLITE_MODEM_STATE_ENABLING_SATELLITE,
+        SATELLITE_MODEM_STATE_DISABLING_SATELLITE,
         SATELLITE_MODEM_STATE_UNKNOWN
       })
   @Retention(RetentionPolicy.SOURCE)
@@ -793,6 +803,34 @@ public class SatelliteManagerWrapper {
     SatelliteDatagramCallback internalCallback = sSatelliteDatagramCallbackWrapperMap.get(callback);
     if (internalCallback != null) {
       mSatelliteManager.unregisterForIncomingDatagram(internalCallback);
+    }
+  }
+
+  /** Register for carrier roaming non-terrestrial network mode changes. */
+  public void registerForCarrierRoamingNtnModeChanged(int subId,
+          @NonNull @CallbackExecutor Executor executor,
+          @NonNull CarrierRoamingNtnModeListenerWrapper listener) {
+    TelephonyCallback.CarrierRoamingNtnModeListener internalListener = new TelephonyCallback
+            .CarrierRoamingNtnModeListener() {
+      @Override
+      public void onCarrierRoamingNtnModeChanged(boolean active) {
+        listener.onCarrierRoamingNtnModeChanged(active);
+      }
+    };
+    sCarrierRoamingNtnModeListenerWrapperMap.put(listener, internalListener);
+
+    TelephonyManager tm = mTelephonyManager.createForSubscriptionId(subId);
+    tm.registerTelephonyCallback(executor, (TelephonyCallback) internalListener);
+  }
+
+  /** Unregister for carrier roaming non-terrestrial network mode changes. */
+  public void unregisterForCarrierRoamingNtnModeChanged(int subId,
+          @NonNull CarrierRoamingNtnModeListenerWrapper listener) {
+    TelephonyCallback.CarrierRoamingNtnModeListener internalListener =
+            sCarrierRoamingNtnModeListenerWrapperMap.get(listener);
+    if (internalListener != null) {
+      TelephonyManager tm = mTelephonyManager.createForSubscriptionId(subId);
+      tm.unregisterTelephonyCallback((TelephonyCallback) internalListener);
     }
   }
 
