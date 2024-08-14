@@ -758,7 +758,7 @@ public class SatelliteManagerWrapper {
           public void onSatelliteSubscriptionProvisionStateChanged(@NonNull
           List<SatelliteSubscriberProvisionStatus> satelliteSubscriberProvisionStatus) {
             callback.onSatelliteSubscriptionProvisionStateChanged(
-                    satelliteSubscriberProvisionStatus);
+                    transformToWrapperList(satelliteSubscriberProvisionStatus));
           }
         };
     sSatelliteProvisionStateCallbackWrapperMap.put(callback, internalCallback);
