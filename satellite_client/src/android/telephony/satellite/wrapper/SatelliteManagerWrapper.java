@@ -774,6 +774,10 @@ public class SatelliteManagerWrapper {
           public void onSatelliteModemStateChanged(@SatelliteModemState int state) {
             callback.onSatelliteModemStateChanged(state);
           }
+
+          public void onEmergencyModeChanged(boolean isEmergency) {
+            callback.onEmergencyModeChanged(isEmergency);
+          }
         };
     sSatelliteModemStateCallbackWrapperMap.put(callback, internalCallback);
 
@@ -844,6 +848,12 @@ public class SatelliteManagerWrapper {
     public void onCarrierRoamingNtnModeChanged(boolean active) {
       logd("onCarrierRoamingNtnModeChanged: active=" + active);
       mListenerWrapper.onCarrierRoamingNtnModeChanged(active);
+    }
+
+    @Override
+    public void onCarrierRoamingNtnEligibleStateChanged(boolean eligible) {
+      logd("onCarrierRoamingNtnEligibleStateChanged: eligible=" + eligible);
+      mListenerWrapper.onCarrierRoamingNtnEligibleStateChanged(eligible);
     }
   }
 
