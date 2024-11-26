@@ -61,6 +61,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.reflect.Method;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -932,6 +933,10 @@ public class SatelliteManagerWrapper {
               public void onRegistrationFailure(int causeCode) {
                 callback.onRegistrationFailure(causeCode);
               }
+
+              public void onTerrestrialNetworkAvailableChanged(boolean isAvailable) {
+                callback.onTerrestrialNetworkAvailableChanged(isAvailable);
+              }
             };
     sSatelliteModemStateCallbackWrapperMap2.put(callback, internalCallback);
 
@@ -1035,6 +1040,13 @@ public class SatelliteManagerWrapper {
       if (mListenerWrapper2 != null) {
         mListenerWrapper2.onCarrierRoamingNtnEligibleStateChanged(eligible);
       }
+    }
+
+    @Override
+    public void onCarrierRoamingNtnAvailableServicesChanged(
+            @NetworkRegistrationInfo.ServiceType List<Integer> availableServices) {
+      logd("onCarrierRoamingNtnAvailableServicesChanged: availableServices="
+              + availableServices.stream().map(String::valueOf).collect(Collectors.joining(", ")));
     }
   }
 
@@ -1722,6 +1734,38 @@ public class SatelliteManagerWrapper {
     } catch (NoSuchMethodException e) {
       return false;
     }
+  }
+
+  /**
+   * Deliver the list of deprovisioned satellite subscriber ids.
+   *
+   * @param list List of deprovisioned SatelliteSubscriberInfo.
+   * @param executor The executor on which the callback will be called.
+   * @param callback The callback object to which the result will be delivered.
+   */
+  @FlaggedApi(Flags.FLAG_CARRIER_ROAMING_NB_IOT_NTN)
+  public void deprovisionSatellite(@NonNull List<SatelliteSubscriberInfoWrapper> list,
+          @NonNull @CallbackExecutor Executor executor,
+          @NonNull OutcomeReceiver<Boolean, SatelliteExceptionWrapper> callback) {
+    OutcomeReceiver internalCallback =
+            new OutcomeReceiver<Boolean, SatelliteException>() {
+              @Override
+              public void onResult(Boolean result) {
+                callback.onResult(result);
+              }
+
+              @Override
+              public void onError(SatelliteException exception) {
+                callback.onError(new SatelliteExceptionWrapper(exception.getErrorCode()));
+              }
+            };
+    mSatelliteManager.deprovisionSatellite(list.stream()
+            .map(info -> new SatelliteSubscriberInfo.Builder()
+                    .setSubscriberId(info.getSubscriberId())
+                    .setCarrierId(info.getCarrierId()).setNiddApn(info.getNiddApn())
+                    .setSubId(info.getSubId()).setSubscriberIdType(info.getSubscriberIdType())
+                    .build())
+            .collect(Collectors.toList()), executor, internalCallback);
   }
 
   @Nullable
