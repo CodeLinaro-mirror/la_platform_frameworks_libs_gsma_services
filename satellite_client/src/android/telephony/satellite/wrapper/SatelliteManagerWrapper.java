@@ -56,6 +56,7 @@ import android.telephony.satellite.SatelliteSubscriberInfo;
 import android.telephony.satellite.SatelliteSubscriberProvisionStatus;
 import android.telephony.satellite.SatelliteSupportedStateCallback;
 import android.telephony.satellite.SatelliteTransmissionUpdateCallback;
+import android.telephony.satellite.SelectedNbIotSatelliteSubscriptionCallback;
 
 import com.android.internal.telephony.flags.Flags;
 import com.android.telephony.Rlog;
@@ -65,14 +66,12 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.reflect.Method;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
@@ -84,6 +83,8 @@ import java.util.stream.Collectors;
  */
 public class SatelliteManagerWrapper {
   private static final String TAG = "SatelliteManagerWrapper";
+
+  private static final int VERSION = 1;
 
   private static final ConcurrentHashMap<
       SatelliteDatagramCallbackWrapper, SatelliteDatagramCallback>
@@ -133,9 +134,13 @@ public class SatelliteManagerWrapper {
           SatelliteCommunicationAllowedStateCallback>
           sSatelliteCommunicationAllowedStateCallbackWrapperMap = new ConcurrentHashMap<>();
 
-    private static final ConcurrentHashMap<SatelliteCommunicationAllowedStateCallbackWrapper2,
-            SatelliteCommunicationAllowedStateCallback>
-            sSatelliteCommunicationAllowedStateCallbackWrapperMap2 = new ConcurrentHashMap<>();
+  private static final ConcurrentHashMap<SatelliteCommunicationAllowedStateCallbackWrapper2,
+          SatelliteCommunicationAllowedStateCallback>
+          sSatelliteCommunicationAllowedStateCallbackWrapperMap2 = new ConcurrentHashMap<>();
+
+  private static final ConcurrentHashMap<SelectedNbIotSatelliteSubscriptionCallbackWrapper,
+          SelectedNbIotSatelliteSubscriptionCallback>
+      sSelectedNbIotSatelliteSubscriptionCallbackWrapperMap = new ConcurrentHashMap<>();
 
   private final SatelliteManager mSatelliteManager;
   private final SubscriptionManager mSubscriptionManager;
@@ -554,6 +559,14 @@ public class SatelliteManagerWrapper {
     public int getErrorCode() {
       return mErrorCode;
     }
+  }
+
+  /**
+   * Returns the current version of the satellite wrapper. Versions start at 1.
+   * There is no to explicit versioning support before the first version.
+   */
+  public int getVersion() {
+    return VERSION;
   }
 
   /**
@@ -1187,9 +1200,8 @@ public class SatelliteManagerWrapper {
 
     @Override
     public void onCarrierRoamingNtnAvailableServicesChanged(
-            @NetworkRegistrationInfo.ServiceType List<Integer> availableServices) {
-      logd("onCarrierRoamingNtnAvailableServicesChanged: availableServices="
-              + availableServices.stream().map(String::valueOf).collect(Collectors.joining(", ")));
+            @NetworkRegistrationInfo.ServiceType int[] availableServices) {
+      logd("onCarrierRoamingNtnAvailableServicesChanged");
     }
   }
 
@@ -1307,12 +1319,12 @@ public class SatelliteManagerWrapper {
         executor, internalCallback);
   }
 
-  /** Request to get satellite configuration for the current location. */
-  public void requestSatelliteConfigurationForCurrentLocation(
+  /** Request to get satellite access configuration for the current location. */
+  public void requestSatelliteAccessConfigurationForCurrentLocation(
           @NonNull @CallbackExecutor Executor executor,
-          @NonNull OutcomeReceiver<Boolean, SatelliteExceptionWrapper> callback) {
+          @NonNull OutcomeReceiver<SatelliteAccessConfigurationWrapper, SatelliteExceptionWrapper> callback) {
     if (mSatelliteManager == null) {
-      logd("requestSatelliteConfigurationForCurrentLocation: mSatelliteManager is null");
+      logd("requestSatelliteAccessConfigurationForCurrentLocation: mSatelliteManager is null");
       executor.execute(() -> Binder.withCleanCallingIdentity(() -> callback.onError(
               new SatelliteExceptionWrapper(
                       SatelliteManager.SATELLITE_RESULT_REQUEST_NOT_SUPPORTED))));
@@ -1320,10 +1332,12 @@ public class SatelliteManagerWrapper {
     }
 
     OutcomeReceiver internalCallback =
-            new OutcomeReceiver<Boolean, SatelliteException>() {
+            new OutcomeReceiver<SatelliteAccessConfiguration, SatelliteException>() {
               @Override
-              public void onResult(Boolean result) {
-                callback.onResult(result);
+              public void onResult(SatelliteAccessConfiguration result) {
+                callback.onResult(new SatelliteAccessConfigurationWrapper(
+                        getSatelliteInfoListWrapper(result.getSatelliteInfos()),
+                        result.getTagIds()));
               }
 
               @Override
@@ -1331,6 +1345,7 @@ public class SatelliteManagerWrapper {
                 callback.onError(new SatelliteExceptionWrapper(exception.getErrorCode()));
               }
             };
+
     mSatelliteManager.requestSatelliteAccessConfigurationForCurrentLocation(executor,
             internalCallback);
   }
@@ -1366,6 +1381,35 @@ public class SatelliteManagerWrapper {
   }
 
   /**
+   * Request to get the name to display for Satellite as a {@link String}.
+   */
+  public void requestSatelliteDisplayName(
+          @NonNull @CallbackExecutor Executor executor,
+          @NonNull OutcomeReceiver<String, SatelliteExceptionWrapper> callback) {
+    if (mSatelliteManager == null) {
+      logd("requestSatelliteDisplayName: mSatelliteManager is null");
+      executor.execute(() -> Binder.withCleanCallingIdentity(() -> callback.onError(
+              new SatelliteExceptionWrapper(
+                      SatelliteManager.SATELLITE_RESULT_REQUEST_NOT_SUPPORTED))));
+      return;
+    }
+
+    OutcomeReceiver internalCallback =
+            new OutcomeReceiver<String, SatelliteException>() {
+              @Override
+              public void onResult(String result) {
+                callback.onResult(result);
+              }
+
+              @Override
+              public void onError(SatelliteException exception) {
+                callback.onError(new SatelliteExceptionWrapper(exception.getErrorCode()));
+              }
+            };
+    mSatelliteManager.requestSatelliteDisplayName(executor, internalCallback);
+  }
+
+  /**
    * Request to get the currently selected satellite subscription id as an {@link Integer}.
    */
   public void requestSelectedNbIotSatelliteSubscriptionId(
@@ -1393,6 +1437,45 @@ public class SatelliteManagerWrapper {
         };
     mSatelliteManager.requestSelectedNbIotSatelliteSubscriptionId(executor, internalCallback);
   }
+
+    /**
+     * Wrapper API to register for selected satellite subscription changed event from the satellite
+     * service.
+     *
+     * @param executor The executor on which the callback will be called.
+     * @param callback The callback to handle the selected satellite subscription changed event.
+     */
+    @SatelliteResult public int registerForSelectedNbIotSatelliteSubscriptionChanged(
+            @NonNull @CallbackExecutor Executor executor,
+            @NonNull SelectedNbIotSatelliteSubscriptionCallbackWrapper callback) {
+        SelectedNbIotSatelliteSubscriptionCallback internalCallback =
+                selectedSubId -> callback.onSelectedNbIotSatelliteSubscriptionChanged(
+                        selectedSubId);
+    sSelectedNbIotSatelliteSubscriptionCallbackWrapperMap.put(callback, internalCallback);
+    return mSatelliteManager.registerForSelectedNbIotSatelliteSubscriptionChanged(executor,
+            internalCallback);
+    }
+
+    /**
+     * Wrapper API to unregisters for selected satellite subscription changed event from the
+     * satellite service. If callback was not registered before, the request will be ignored.
+     *
+     * @param callback The callback that was passed to {@link
+     *     #registerForSelectedNbIotSatelliteSubscriptionChanged(Executor,
+     *     SelectedNbIotSatelliteSubscriptionCallbackWrapper)}.
+     */
+    public void unregisterForSelectedNbIotSatelliteSubscriptionChanged(
+            @NonNull SelectedNbIotSatelliteSubscriptionCallbackWrapper callback) {
+        SelectedNbIotSatelliteSubscriptionCallback internalCallback =
+                sSelectedNbIotSatelliteSubscriptionCallbackWrapperMap.remove(callback);
+        if (internalCallback != null) {
+            mSatelliteManager.unregisterForSelectedNbIotSatelliteSubscriptionChanged(
+                    internalCallback);
+        } else {
+            logd("unregisterForSelectedNbIotSatelliteSubscriptionChanged: internalCallback is"
+                    + " null");
+        }
+    }
 
   /**
    * Inform whether the device is aligned with the satellite for demo mode.
@@ -1886,6 +1969,61 @@ public class SatelliteManagerWrapper {
     mSatelliteManager.requestSessionStats(executor, internalCallback);
   }
 
+  /** Request to get the {@link SatelliteSessionStatsWrapper2} of the satellite service. */
+  public void requestSessionStats2(@NonNull @CallbackExecutor Executor executor,
+          @NonNull OutcomeReceiver<SatelliteSessionStatsWrapper2,
+                  SatelliteExceptionWrapper> callback) {
+    logd("requestSessionStats2 called");
+    if (mSatelliteManager == null) {
+      executor.execute(() -> Binder.withCleanCallingIdentity(() -> callback.onError(
+              new SatelliteExceptionWrapper(
+                      SatelliteManager.SATELLITE_RESULT_REQUEST_NOT_SUPPORTED))));
+      return;
+    }
+    OutcomeReceiver internalCallback =
+            new OutcomeReceiver<SatelliteSessionStats, SatelliteException>() {
+              @Override
+              public void onResult(SatelliteSessionStats result) {
+                logd("requestSessionStats2 onResult received");
+                Map<Integer, SatelliteSessionStats> satelliteSessionStats =
+                        result.getSatelliteSessionStats();
+                Map<Integer, SatelliteSessionStatsWrapper2> sessionStatsMap = new HashMap<>();
+                for (Map.Entry<Integer, SatelliteSessionStats> entry :
+                        satelliteSessionStats.entrySet()) {
+                  sessionStatsMap.put(entry.getKey(),
+                          buildSatelliteSessionStatsWrapper2(entry.getValue()));
+                }
+                SatelliteSessionStatsWrapper2 sessionStatsWrapper2 =
+                        new SatelliteSessionStatsWrapper2();
+                sessionStatsWrapper2.setSatelliteSessionStats(sessionStatsMap);
+                logd("requestSessionStats2 completed sessionStatsWrapper2 = " +sessionStatsWrapper2);
+                callback.onResult(sessionStatsWrapper2);
+              }
+
+              @Override
+              public void onError(SatelliteException exception) {
+                callback.onError(new SatelliteExceptionWrapper(exception.getErrorCode()));
+              }
+            };
+    mSatelliteManager.requestSessionStats(executor, internalCallback);
+  }
+
+  private SatelliteSessionStatsWrapper2 buildSatelliteSessionStatsWrapper2(
+          SatelliteSessionStats value) {
+    SatelliteSessionStatsWrapper2 data = new SatelliteSessionStatsWrapper2();
+    data.updateLatencyOfAllSuccessfulUserMessages(value.getLatencyOfAllSuccessfulUserMessages());
+    data.setMaxLatency(value.getMaxLatency());
+    data.setLastMessageLatency(value.getLastMessageLatency());
+    data.setCountOfSuccessfulUserMessages(value.getCountOfSuccessfulUserMessages());
+    data.setCountOfUnsuccessfulUserMessages(value.getCountOfUnsuccessfulUserMessages());
+    data.setCountOfTimedOutUserMessagesWaitingForAck(
+            value.getCountOfTimedOutUserMessagesWaitingForAck());
+    data.setCountOfTimedOutUserMessagesWaitingForConnection(
+            value.getCountOfTimedOutUserMessagesWaitingForConnection());
+    data.setCountOfUserMessagesInQueueToBeSent(value.getCountOfUserMessagesInQueueToBeSent());
+    return data;
+  }
+
   /**
    * Unregisters for the satellite supported state changed. If callback was not registered before,
    * the request will be ignored.
@@ -1927,23 +2065,24 @@ public class SatelliteManagerWrapper {
     return result;
   }
 
-  private List<SatelliteInfoWrapper> getSatelliteInfoListWrapper(
+  @NonNull
+  private List<SatelliteInfoWrapper> getSatelliteInfoListWrapper(@NonNull
           List<SatelliteInfo> satelliteInfoList) {
       List<SatelliteInfoWrapper> satelliteInfoWrapperList = new ArrayList<>();
+
       for (SatelliteInfo info : satelliteInfoList) {
-          SatellitePositionWrapper satellitePositionWrapperWrapper = null;
-          if (info.getSatellitePosition() != null) {
-              satellitePositionWrapperWrapper = new SatellitePositionWrapper(
+          SatellitePositionWrapper satellitePositionWrapper = new SatellitePositionWrapper(
                       info.getSatellitePosition().getLongitudeDegrees(),
                       info.getSatellitePosition().getAltitudeKm());
-          }
+
           List<EarfcnRangeWrapper> earfcnRangeWrapperList = new ArrayList<>();
           for (EarfcnRange range : info.getEarfcnRanges()) {
               earfcnRangeWrapperList.add(new EarfcnRangeWrapper(
                       range.getStartEarfcn(), range.getEndEarfcn()));
           }
+
           SatelliteInfoWrapper satelliteInfoWrapper = new SatelliteInfoWrapper(
-                  info.getSatelliteId(), satellitePositionWrapperWrapper,
+                  info.getSatelliteId(), satellitePositionWrapper,
                   info.getBands(), earfcnRangeWrapperList);
 
           satelliteInfoWrapperList.add(satelliteInfoWrapper);
@@ -2129,7 +2268,7 @@ public class SatelliteManagerWrapper {
       for (SatelliteSubscriberProvisionStatus status : input) {
         SatelliteSubscriberInfo info = status.getSatelliteSubscriberInfo();
         output.add(new SatelliteSubscriberProvisionStatusWrapper.Builder()
-                .setProvisionStatus(status.getProvisionStatus())
+                .setProvisionStatus(status.isProvisioned())
                 .setSatelliteSubscriberInfo(
                         new SatelliteSubscriberInfoWrapper.Builder()
                                 .setSubscriberId(info.getSubscriberId())
