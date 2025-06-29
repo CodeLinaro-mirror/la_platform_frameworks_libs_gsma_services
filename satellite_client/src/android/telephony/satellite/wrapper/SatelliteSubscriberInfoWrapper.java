@@ -28,7 +28,6 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.Objects;
 
-@FlaggedApi(Flags.FLAG_CARRIER_ROAMING_NB_IOT_NTN)
 public class SatelliteSubscriberInfoWrapper implements Parcelable {
     @NonNull private final String mSubscriberId;
     @NonNull private final int mCarrierId;
@@ -53,7 +52,6 @@ public class SatelliteSubscriberInfoWrapper implements Parcelable {
     public @interface SubscriberIdType {
     }
 
-    @FlaggedApi(Flags.FLAG_CARRIER_ROAMING_NB_IOT_NTN)
     public SatelliteSubscriberInfoWrapper(@NonNull Builder builder) {
         this.mSubscriberId = builder.mSubscriberId;
         this.mCarrierId = builder.mCarrierId;
@@ -67,7 +65,6 @@ public class SatelliteSubscriberInfoWrapper implements Parcelable {
      *
      * @hide
      */
-    @FlaggedApi(Flags.FLAG_CARRIER_ROAMING_NB_IOT_NTN)
     public static class Builder {
         @NonNull private String mSubscriberId;
         @NonNull private int mCarrierId;
@@ -80,7 +77,6 @@ public class SatelliteSubscriberInfoWrapper implements Parcelable {
          *
          * @hide
          */
-        @FlaggedApi(Flags.FLAG_CARRIER_ROAMING_NB_IOT_NTN)
         @NonNull
         public Builder setSubscriberId(String subscriberId) {
             mSubscriberId = subscriberId;
@@ -91,7 +87,6 @@ public class SatelliteSubscriberInfoWrapper implements Parcelable {
          * Set the CarrierId and returns the Builder class.
          * @hide
          */
-        @FlaggedApi(Flags.FLAG_CARRIER_ROAMING_NB_IOT_NTN)
         @NonNull
         public Builder setCarrierId(int carrierId) {
             mCarrierId = carrierId;
@@ -102,7 +97,6 @@ public class SatelliteSubscriberInfoWrapper implements Parcelable {
          * Set the niddApn and returns the Builder class.
          * @hide
          */
-        @FlaggedApi(Flags.FLAG_CARRIER_ROAMING_NB_IOT_NTN)
         @NonNull
         public Builder setNiddApn(String niddApn) {
             mNiddApn = niddApn;
@@ -113,7 +107,6 @@ public class SatelliteSubscriberInfoWrapper implements Parcelable {
          * Set the subId and returns the Builder class.
          * @hide
          */
-        @FlaggedApi(Flags.FLAG_CARRIER_ROAMING_NB_IOT_NTN)
         @NonNull
         public Builder setSubId(int subId) {
             mSubId = subId;
@@ -124,7 +117,6 @@ public class SatelliteSubscriberInfoWrapper implements Parcelable {
          * Set the SubscriberIdType and returns the Builder class.
          * @hide
          */
-        @FlaggedApi(Flags.FLAG_CARRIER_ROAMING_NB_IOT_NTN)
         @NonNull
         public Builder setSubscriberIdType(@SubscriberIdType int subscriberIdType) {
             mSubscriberIdType = subscriberIdType;
@@ -135,7 +127,6 @@ public class SatelliteSubscriberInfoWrapper implements Parcelable {
          * Returns SatelliteSubscriberInfoWrapper object.
          * @hide
          */
-        @FlaggedApi(Flags.FLAG_CARRIER_ROAMING_NB_IOT_NTN)
         @NonNull
         public SatelliteSubscriberInfoWrapper build() {
             return new SatelliteSubscriberInfoWrapper(this);
@@ -154,7 +145,6 @@ public class SatelliteSubscriberInfoWrapper implements Parcelable {
      * @hide
      */
     @Override
-    @FlaggedApi(Flags.FLAG_CARRIER_ROAMING_NB_IOT_NTN)
     public void writeToParcel(@NonNull Parcel out, int flags) {
         out.writeString(mSubscriberId);
         out.writeInt(mCarrierId);
@@ -163,7 +153,6 @@ public class SatelliteSubscriberInfoWrapper implements Parcelable {
         out.writeInt(mSubscriberIdType);
     }
 
-    @FlaggedApi(Flags.FLAG_CARRIER_ROAMING_NB_IOT_NTN)
     public static final @android.annotation.NonNull Creator<SatelliteSubscriberInfoWrapper>
             CREATOR =
             new Creator<SatelliteSubscriberInfoWrapper>() {
@@ -182,36 +171,30 @@ public class SatelliteSubscriberInfoWrapper implements Parcelable {
      * @hide
      */
     @Override
-    @FlaggedApi(Flags.FLAG_CARRIER_ROAMING_NB_IOT_NTN)
     public int describeContents() {
         return 0;
     }
 
-    @FlaggedApi(Flags.FLAG_CARRIER_ROAMING_NB_IOT_NTN)
     @NonNull
     public String getSubscriberId() {
         return mSubscriberId;
     }
 
-    @FlaggedApi(Flags.FLAG_CARRIER_ROAMING_NB_IOT_NTN)
     @NonNull
     public int getCarrierId() {
         return mCarrierId;
     }
 
-    @FlaggedApi(Flags.FLAG_CARRIER_ROAMING_NB_IOT_NTN)
     @NonNull
     public String getNiddApn() {
         return mNiddApn;
     }
 
-    @FlaggedApi(Flags.FLAG_CARRIER_ROAMING_NB_IOT_NTN)
     @NonNull
     public int getSubId() {
         return mSubId;
     }
 
-    @FlaggedApi(Flags.FLAG_CARRIER_ROAMING_NB_IOT_NTN)
     @NonNull
     public @SubscriberIdType int getSubscriberIdType() {
         return mSubscriberIdType;

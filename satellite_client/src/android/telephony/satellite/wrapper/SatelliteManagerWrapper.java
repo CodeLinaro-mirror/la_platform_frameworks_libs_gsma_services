@@ -2150,7 +2150,6 @@ public class SatelliteManagerWrapper {
    * {@code false} otherwise.
    * Note: The method returns {@code false} if the parameter is invalid or any other error occurs.
    */
-  @FlaggedApi(Flags.FLAG_CARRIER_ROAMING_NB_IOT_NTN)
   public boolean isSatelliteESOSSupportedSubscription(int subId) {
     if (!mSubscriptionManager.isValidSubscriptionId(subId)) {
       return false;
@@ -2176,7 +2175,6 @@ public class SatelliteManagerWrapper {
    * order index 0 has the highest priority. Otherwise, it returns an error with a
    * SatelliteException.
    */
-  @FlaggedApi(Flags.FLAG_CARRIER_ROAMING_NB_IOT_NTN)
   public void requestSatelliteSubscriberProvisionStatus(
           @NonNull @CallbackExecutor Executor executor,
           @NonNull OutcomeReceiver<List<SatelliteSubscriberProvisionStatusWrapper>,
@@ -2214,7 +2212,6 @@ public class SatelliteManagerWrapper {
    * @param executor The executor on which the callback will be called.
    * @param callback The callback object to which the result will be delivered.
    */
-  @FlaggedApi(Flags.FLAG_CARRIER_ROAMING_NB_IOT_NTN)
   public void provisionSatellite(@NonNull List<SatelliteSubscriberInfoWrapper> list,
           @NonNull @CallbackExecutor Executor executor,
           @NonNull OutcomeReceiver<Boolean, SatelliteExceptionWrapper> callback) {
@@ -2251,20 +2248,18 @@ public class SatelliteManagerWrapper {
   private List<SatelliteSubscriberProvisionStatusWrapper> transformToWrapperList(
           List<SatelliteSubscriberProvisionStatus> input) {
     List<SatelliteSubscriberProvisionStatusWrapper> output = new ArrayList<>();
-    if (Flags.carrierRoamingNbIotNtn()) {
-      for (SatelliteSubscriberProvisionStatus status : input) {
-        SatelliteSubscriberInfo info = status.getSatelliteSubscriberInfo();
-        output.add(new SatelliteSubscriberProvisionStatusWrapper.Builder()
-                .setProvisionStatus(status.isProvisioned())
-                .setSatelliteSubscriberInfo(
-                        new SatelliteSubscriberInfoWrapper.Builder()
-                                .setSubscriberId(info.getSubscriberId())
-                                .setCarrierId(info.getCarrierId()).setNiddApn(info.getNiddApn())
-                                .setSubId(info.getSubscriptionId())
-                                .setSubscriberIdType(info.getSubscriberIdType())
-                                .build()).build());
+    for (SatelliteSubscriberProvisionStatus status : input) {
+      SatelliteSubscriberInfo info = status.getSatelliteSubscriberInfo();
+      output.add(new SatelliteSubscriberProvisionStatusWrapper.Builder()
+              .setProvisionStatus(status.isProvisioned())
+              .setSatelliteSubscriberInfo(
+                      new SatelliteSubscriberInfoWrapper.Builder()
+                              .setSubscriberId(info.getSubscriberId())
+                              .setCarrierId(info.getCarrierId()).setNiddApn(info.getNiddApn())
+                              .setSubId(info.getSubscriptionId())
+                              .setSubscriberIdType(info.getSubscriberIdType())
+                              .build()).build());
       }
-    }
     return output;
   }
 
@@ -2291,7 +2286,6 @@ public class SatelliteManagerWrapper {
    * @param executor The executor on which the callback will be called.
    * @param callback The callback object to which the result will be delivered.
    */
-  @FlaggedApi(Flags.FLAG_CARRIER_ROAMING_NB_IOT_NTN)
   public void deprovisionSatellite(@NonNull List<SatelliteSubscriberInfoWrapper> list,
           @NonNull @CallbackExecutor Executor executor,
           @NonNull OutcomeReceiver<Boolean, SatelliteExceptionWrapper> callback) {

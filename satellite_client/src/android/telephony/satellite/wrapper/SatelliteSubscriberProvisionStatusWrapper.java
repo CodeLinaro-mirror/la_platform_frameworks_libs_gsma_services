@@ -25,14 +25,12 @@ import com.android.internal.telephony.flags.Flags;
 
 import java.util.Objects;
 
-@FlaggedApi(Flags.FLAG_CARRIER_ROAMING_NB_IOT_NTN)
 public class SatelliteSubscriberProvisionStatusWrapper implements Parcelable {
     @NonNull
     private SatelliteSubscriberInfoWrapper mSubscriberInfo;
     /** {@code true} mean the satellite subscriber is provisioned, {@code false} otherwise. */
     private boolean mProvisionStatus;
 
-    @FlaggedApi(Flags.FLAG_CARRIER_ROAMING_NB_IOT_NTN)
     public SatelliteSubscriberProvisionStatusWrapper(@NonNull Builder builder) {
         mSubscriberInfo = builder.mSubscriberInfo;
         mProvisionStatus = builder.mProvisionStatus;
@@ -47,7 +45,6 @@ public class SatelliteSubscriberProvisionStatusWrapper implements Parcelable {
      *
      * @hide
      */
-    @FlaggedApi(Flags.FLAG_CARRIER_ROAMING_NB_IOT_NTN)
     public static class Builder {
         private SatelliteSubscriberInfoWrapper mSubscriberInfo;
         private boolean mProvisionStatus;
@@ -57,7 +54,6 @@ public class SatelliteSubscriberProvisionStatusWrapper implements Parcelable {
          *
          * @hide
          */
-        @FlaggedApi(Flags.FLAG_CARRIER_ROAMING_NB_IOT_NTN)
         @NonNull
         public Builder setSatelliteSubscriberInfo(
                 SatelliteSubscriberInfoWrapper satelliteSubscriberInfo) {
@@ -70,7 +66,6 @@ public class SatelliteSubscriberProvisionStatusWrapper implements Parcelable {
          *
          * @hide
          */
-        @FlaggedApi(Flags.FLAG_CARRIER_ROAMING_NB_IOT_NTN)
         @NonNull
         public Builder setProvisionStatus(boolean provisionStatus) {
             mProvisionStatus = provisionStatus;
@@ -82,7 +77,6 @@ public class SatelliteSubscriberProvisionStatusWrapper implements Parcelable {
          *
          * @hide
          */
-        @FlaggedApi(Flags.FLAG_CARRIER_ROAMING_NB_IOT_NTN)
         @NonNull
         public SatelliteSubscriberProvisionStatusWrapper build() {
             return new SatelliteSubscriberProvisionStatusWrapper(this);
@@ -93,13 +87,11 @@ public class SatelliteSubscriberProvisionStatusWrapper implements Parcelable {
      * @hide
      */
     @Override
-    @FlaggedApi(Flags.FLAG_CARRIER_ROAMING_NB_IOT_NTN)
     public void writeToParcel(@NonNull Parcel out, int flags) {
         out.writeParcelable(mSubscriberInfo, flags);
         out.writeBoolean(mProvisionStatus);
     }
 
-    @FlaggedApi(Flags.FLAG_CARRIER_ROAMING_NB_IOT_NTN)
     public static final @android.annotation.NonNull
             Creator<SatelliteSubscriberProvisionStatusWrapper> CREATOR =
             new Creator<SatelliteSubscriberProvisionStatusWrapper>() {
@@ -118,7 +110,6 @@ public class SatelliteSubscriberProvisionStatusWrapper implements Parcelable {
      * @hide
      */
     @Override
-    @FlaggedApi(Flags.FLAG_CARRIER_ROAMING_NB_IOT_NTN)
     public int describeContents() {
         return 0;
     }
@@ -129,7 +120,6 @@ public class SatelliteSubscriberProvisionStatusWrapper implements Parcelable {
      * @return SatelliteSubscriberInfo.
      * @hide
      */
-    @FlaggedApi(Flags.FLAG_CARRIER_ROAMING_NB_IOT_NTN)
     public @NonNull SatelliteSubscriberInfoWrapper getSatelliteSubscriberInfo() {
         return mSubscriberInfo;
     }
@@ -140,7 +130,6 @@ public class SatelliteSubscriberProvisionStatusWrapper implements Parcelable {
      * @return {@code true} means provisioning. {@code false} means deprovisioning.
      * @hide
      */
-    @FlaggedApi(Flags.FLAG_CARRIER_ROAMING_NB_IOT_NTN)
     public @NonNull boolean getProvisionStatus() {
         return mProvisionStatus;
     }
