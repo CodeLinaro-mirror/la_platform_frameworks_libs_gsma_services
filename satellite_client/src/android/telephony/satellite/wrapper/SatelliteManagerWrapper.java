@@ -1213,7 +1213,7 @@ public class SatelliteManagerWrapper {
   public void registerForCarrierRoamingNtnModeChanged(int subId,
           @NonNull @CallbackExecutor Executor executor,
           @NonNull CarrierRoamingNtnModeListenerWrapper2 listener) {
-    logd("registerForCarrierRoamingNtnModeChanged: subId=" + subId);
+    logd("registerForCarrierRoamingNtnModeChanged2: subId=" + subId);
     CarrierRoamingNtnModeListener internalListener = new CarrierRoamingNtnModeListener(listener);
     sCarrierRoamingNtnModeListenerWrapperMap2.put(listener, internalListener);
 
@@ -1236,9 +1236,9 @@ public class SatelliteManagerWrapper {
   /** Unregister for carrier roaming non-terrestrial network mode changes. */
   public void unregisterForCarrierRoamingNtnModeChanged(int subId,
           @NonNull CarrierRoamingNtnModeListenerWrapper2 listener) {
-    logd("unregisterForCarrierRoamingNtnModeChanged: subId=" + subId);
+    logd("unregisterForCarrierRoamingNtnModeChanged2: subId=" + subId);
     CarrierRoamingNtnModeListener internalListener =
-            sCarrierRoamingNtnModeListenerWrapperMap.remove(listener);
+            sCarrierRoamingNtnModeListenerWrapperMap2.remove(listener);
     if (internalListener != null) {
       TelephonyManager tm = mTelephonyManager.createForSubscriptionId(subId);
       tm.unregisterTelephonyCallback(internalListener);
