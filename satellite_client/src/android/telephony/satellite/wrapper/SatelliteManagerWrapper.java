@@ -137,6 +137,10 @@ public class SatelliteManagerWrapper {
           SatelliteCommunicationAccessStateCallback>
           sSatelliteCommunicationAllowedStateCallbackWrapperMap2 = new ConcurrentHashMap<>();
 
+  private static final ConcurrentHashMap<SatelliteCommunicationAllowedStateCallbackWrapper3,
+          SatelliteCommunicationAccessStateCallback>
+          sSatelliteCommunicationAllowedStateCallbackWrapperMap3 = new ConcurrentHashMap<>();
+
   private static final ConcurrentHashMap<SelectedNbIotSatelliteSubscriptionCallbackWrapper,
           SelectedNbIotSatelliteSubscriptionCallback>
       sSelectedNbIotSatelliteSubscriptionCallbackWrapperMap = new ConcurrentHashMap<>();
@@ -1343,6 +1347,37 @@ public class SatelliteManagerWrapper {
             internalCallback);
   }
 
+  /** Request to get satellite access configuration for the current location. */
+  public void requestSatelliteAccessConfigurationForCurrentLocation2(
+          @NonNull @CallbackExecutor Executor executor,
+          @NonNull OutcomeReceiver<SatelliteAccessConfigurationWrapper2, SatelliteExceptionWrapper> callback) {
+    if (mSatelliteManager == null) {
+      logd("requestSatelliteAccessConfigurationForCurrentLocation: mSatelliteManager is null");
+      executor.execute(() -> Binder.withCleanCallingIdentity(() -> callback.onError(
+              new SatelliteExceptionWrapper(
+                      SatelliteManager.SATELLITE_RESULT_REQUEST_NOT_SUPPORTED))));
+      return;
+    }
+
+    OutcomeReceiver internalCallback =
+            new OutcomeReceiver<SatelliteAccessConfiguration, SatelliteException>() {
+              @Override
+              public void onResult(SatelliteAccessConfiguration result) {
+                callback.onResult(new SatelliteAccessConfigurationWrapper2(
+                        getSatelliteInfoListWrapper(result.getSatelliteInfos()),
+                        result.getTagIds(), result.getCarrierIds()));
+              }
+
+              @Override
+              public void onError(SatelliteException exception) {
+                callback.onError(new SatelliteExceptionWrapper(exception.getErrorCode()));
+              }
+            };
+
+    mSatelliteManager.requestSatelliteAccessConfigurationForCurrentLocation(executor,
+            internalCallback);
+  }
+
   /**
    * Request to get the duration in seconds after which the satellite will be visible. This will be
    * {@link Duration#ZERO} if the satellite is currently visible.
@@ -2110,6 +2145,40 @@ public class SatelliteManagerWrapper {
     return result;
   }
 
+  /** Registers for the satellite communication allowed state changed. */
+  @SatelliteResult
+  public int registerForCommunicationAllowedStateChanged3(
+          @NonNull @CallbackExecutor Executor executor,
+          @NonNull SatelliteCommunicationAllowedStateCallbackWrapper3 callback3) {
+    if (mSatelliteManager == null) {
+      logd("registerForCommunicationAllowedStateChanged3: mSatelliteManager is null");
+      return SatelliteManagerWrapper.SATELLITE_RESULT_REQUEST_NOT_SUPPORTED;
+    }
+
+    SatelliteCommunicationAccessStateCallback internalCallback =
+            new SatelliteCommunicationAccessStateCallback() {
+              @Override
+              public void onAccessAllowedStateChanged(boolean supported) {
+                callback3.onSatelliteCommunicationAllowedStateChanged(supported);
+              }
+
+              @Override
+              public void onAccessConfigurationChanged(SatelliteAccessConfiguration
+                      config) {
+                if (config != null) {
+                  callback3.onSatelliteAccessConfigurationChanged(
+                          new SatelliteAccessConfigurationWrapper2(
+                                  getSatelliteInfoListWrapper(config.getSatelliteInfos()),
+                                  config.getTagIds(), config.getCarrierIds()));
+                }
+              }
+            };
+    sSatelliteCommunicationAllowedStateCallbackWrapperMap3.put(callback3, internalCallback);
+    int result = mSatelliteManager.registerForCommunicationAccessStateChanged(executor,
+            internalCallback);
+    return result;
+  }
+
   /**
    * Unregisters for the satellite communication allowed state changed. If callback was not
    * registered before, the request will be ignored.
@@ -2136,6 +2205,19 @@ public class SatelliteManagerWrapper {
           @NonNull SatelliteCommunicationAllowedStateCallbackWrapper2 callback) {
     SatelliteCommunicationAccessStateCallback internalCallback =
             sSatelliteCommunicationAllowedStateCallbackWrapperMap2.remove(callback);
+    if (internalCallback != null) {
+      mSatelliteManager.unregisterForCommunicationAccessStateChanged(internalCallback);
+    }
+  }
+
+  /**
+   * Unregisters for the satellite communication allowed state changed. If callback was not
+   * registered before, the request will be ignored.
+   */
+  public void unregisterForCommunicationAllowedStateChanged3(
+          @NonNull SatelliteCommunicationAllowedStateCallbackWrapper3 callback3) {
+    SatelliteCommunicationAccessStateCallback internalCallback =
+            sSatelliteCommunicationAllowedStateCallbackWrapperMap3.remove(callback3);
     if (internalCallback != null) {
       mSatelliteManager.unregisterForCommunicationAccessStateChanged(internalCallback);
     }
