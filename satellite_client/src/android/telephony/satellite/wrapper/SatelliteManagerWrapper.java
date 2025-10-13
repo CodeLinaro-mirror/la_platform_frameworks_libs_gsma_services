@@ -83,7 +83,7 @@ import java.util.stream.Collectors;
 public class SatelliteManagerWrapper {
   private static final String TAG = "SatelliteManagerWrapper";
 
-  private static final int VERSION = 1;
+  private static final int VERSION = 2;
 
   private static final ConcurrentHashMap<
       SatelliteDatagramCallbackWrapper, SatelliteDatagramCallback>
